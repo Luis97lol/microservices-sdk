@@ -4,9 +4,11 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+
+	"github.com/Luis97lol/microservices-sdk/core/requestbuilder"
 )
 
-func sendText(builder *RequestBuilder, operation string) (OperationResponse, error) {
+func sendText(builder *requestbuilder.RequestBuilder, operation string) (OperationResponse, error) {
 	response, err := builder.Send()
 	if err != nil {
 		return OperationResponse{}, &APIError{Operation: operation, Err: err}

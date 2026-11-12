@@ -6,6 +6,8 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/Luis97lol/microservices-sdk/core/requestbuilder"
 )
 
 // Config contains the auth service settings. Values may be supplied from
@@ -46,8 +48,8 @@ func NewClient(config Config) (*Client, error) {
 	}, nil
 }
 
-func (c *Client) requestBuilder(ctx context.Context, method, path, token string) *RequestBuilder {
-	builder := NewRequestBuilder().
+func (c *Client) requestBuilder(ctx context.Context, method, path, token string) *requestbuilder.RequestBuilder {
+	builder := requestbuilder.NewRequestBuilder().
 		WithContext(ctx).
 		WithMethod(method).
 		WithURL(c.baseURL+path).

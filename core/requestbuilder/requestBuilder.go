@@ -1,4 +1,4 @@
-package auth
+package requestbuilder
 
 import (
 	"bytes"
@@ -10,14 +10,12 @@ import (
 	"net/http"
 )
 
-// RequestBuilder define el struct para construir y enviar requests HTTP
 type RequestBuilder struct {
 	req    *http.Request
 	client *http.Client
 	err    error
 }
 
-// NewRequestBuilder crea una nueva instancia de RequestBuilder con una request vacía
 func NewRequestBuilder() *RequestBuilder {
 	return &RequestBuilder{
 		req: &http.Request{
@@ -29,8 +27,6 @@ func NewRequestBuilder() *RequestBuilder {
 	}
 }
 
-// WithClient establece el cliente HTTP usado para enviar la request.
-// Si client es nil, se utiliza http.DefaultClient.
 func (rb *RequestBuilder) WithClient(client *http.Client) *RequestBuilder {
 	if client == nil {
 		rb.client = http.DefaultClient
@@ -40,7 +36,6 @@ func (rb *RequestBuilder) WithClient(client *http.Client) *RequestBuilder {
 	return rb
 }
 
-// WithContext establece el contexto de la request.
 func (rb *RequestBuilder) WithContext(ctx context.Context) *RequestBuilder {
 	if ctx == nil {
 		rb.err = errors.New("request context is nil")
@@ -50,30 +45,26 @@ func (rb *RequestBuilder) WithContext(ctx context.Context) *RequestBuilder {
 	return rb
 }
 
-// From clona una request existente, copiando sus encabezados y configuraciones
-func (rb *RequestBuilder) From(r *http.Request) *RequestBuilder {
-	if r == nil {
+func (rb *RequestBuilder) From(request *http.Request) *RequestBuilder {
+	if request == nil {
 		rb.err = errors.New("request is nil")
 		return rb
 	}
-	rb.req = r.Clone(r.Context())    // Clona la request
-	rb.req.Header = r.Header.Clone() // Clona los encabezados
+	rb.req = request.Clone(request.Context())
+	rb.req.Header = request.Header.Clone()
 	return rb
 }
 
-// WithHeader añade o sobrescribe un encabezado en la request
 func (rb *RequestBuilder) WithHeader(key, value string) *RequestBuilder {
-	rb.req.Header.Set(key, value) // Añade o sobrescribe el encabezado
+	rb.req.Header.Set(key, value)
 	return rb
 }
 
-// WithMethod establece el método HTTP de la request (GET, POST, PUT, etc.)
 func (rb *RequestBuilder) WithMethod(method string) *RequestBuilder {
-	rb.req.Method = method // Cambia el método de la request
+	rb.req.Method = method
 	return rb
 }
 
-// WithBody establece el cuerpo de la request
 func (rb *RequestBuilder) WithBody(body []byte) *RequestBuilder {
 	bodyCopy := append([]byte(nil), body...)
 	rb.req.Body = io.NopCloser(bytes.NewReader(bodyCopy))
@@ -84,29 +75,26 @@ func (rb *RequestBuilder) WithBody(body []byte) *RequestBuilder {
 	return rb
 }
 
-func (rb *RequestBuilder) WithJSON(jsonBody interface{}) *RequestBuilder {
-	body, err := json.Marshal(jsonBody)
+func (rb *RequestBuilder) WithJSON(body any) *RequestBuilder {
+	encodedBody, err := json.Marshal(body)
 	if err != nil {
 		rb.err = fmt.Errorf("encode request body: %w", err)
 		return rb
 	}
-	return rb.WithBody(body)
+	return rb.WithBody(encodedBody)
 }
 
-// WithURL crea una nueva request con la URL proporcionada, manteniendo el método, encabezados y cuerpo
-func (rb *RequestBuilder) WithURL(url string) *RequestBuilder {
-	newRequest, err := http.NewRequestWithContext(rb.req.Context(), rb.req.Method, url, rb.req.Body)
+func (rb *RequestBuilder) WithURL(rawURL string) *RequestBuilder {
+	request, err := http.NewRequestWithContext(rb.req.Context(), rb.req.Method, rawURL, rb.req.Body)
 	if err != nil {
 		rb.err = fmt.Errorf("set request URL: %w", err)
 		return rb
 	}
-
-	newRequest.Header = rb.req.Header.Clone()
-	rb.req = newRequest
+	request.Header = rb.req.Header.Clone()
+	rb.req = request
 	return rb
 }
 
-// Send envía la request construida y devuelve la respuesta o un error
 func (rb *RequestBuilder) Send() (*http.Response, error) {
 	if rb.err != nil {
 		return nil, fmt.Errorf("build request: %w", rb.err)
@@ -114,14 +102,13 @@ func (rb *RequestBuilder) Send() (*http.Response, error) {
 	if rb.req == nil {
 		return nil, errors.New("build request: request is nil")
 	}
-	resp, err := rb.client.Do(rb.req)
+	response, err := rb.client.Do(rb.req)
 	if err != nil {
 		return nil, fmt.Errorf("error sending request: %w", err)
 	}
-	return resp, nil
+	return response, nil
 }
 
-// Build devuelve la request construida.
 func (rb *RequestBuilder) Build() *http.Request {
 	return rb.req
 }

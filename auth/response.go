@@ -6,9 +6,11 @@ import (
 	"io"
 	"net/http"
 	"strings"
+
+	"github.com/Luis97lol/microservices-sdk/core/requestbuilder"
 )
 
-func sendAndDecodeJSON(builder *RequestBuilder, operation string, output any) error {
+func sendAndDecodeJSON(builder *requestbuilder.RequestBuilder, operation string, output any) error {
 	response, err := builder.Send()
 	if err != nil {
 		return &APIError{Operation: operation, Err: err}
